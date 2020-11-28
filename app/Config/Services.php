@@ -1,6 +1,10 @@
-<?php namespace Config;
+<?php
+
+namespace Config;
 
 use CodeIgniter\Config\Services as CoreServices;
+use PHPAuth\Config as PHPAuthConfig;
+use PHPAuth\Auth as PHPAuth;
 
 /**
  * Services Configuration file.
@@ -27,4 +31,25 @@ class Services extends CoreServices
 	//
 	//        return new \CodeIgniter\Example();
 	//    }
+
+	public static function authenticator(bool $getShared = true, PHPAuthConfig $authenticatorconfig = null)
+	{
+		if ($getShared) {
+			return self::getSharedInstance('authenticator');
+		}
+
+		if (empty($authenticatorconfig)) {
+			// Use PDO, assume default db
+			$dbconfig = new \Config\Database();
+			$dsn  = $dbconfig->default['DSN'];
+			$user = $dbconfig->default['username'];
+			$pass = $dbconfig->default['password'];
+			$dbh  = new \PDO($dsn, $user, $pass);
+
+			$authenticatorconfig = new \Config\Authenticator();
+			$phpauthcfg = new PHPAuthConfig($dbh, 'array', $authenticatorconfig->authconfig);
+		}
+		$authenticator = new PHPAuth($dbh, $phpauthcfg);
+		return $authenticator;
+	}
 }
